@@ -1,0 +1,26 @@
+spring.application.name=demo
+spring.datasource.url=jdbc:mysql://localhost:3306/Horizon?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=manager
+spring.jpa.show-sql = true
+spring.jpa.hibernate.ddl-auto = update
+spring.jpa.properties.hibernate.dialect = org.hibernate.dialect.MySQL8Dialect
+
+SECRET_KEY=1uORMccTFcTWQvjupAGxGapKFtcSRb4IPAaUJpfxbQoXuHutABXbNdt74yAg4SvofyvqSY6MXcbwoTXp7gk2Q3jIjOjsaUAUz4xA+7OHU4w=
+#JWT expiration timeout in msec : 24*3600*1000
+EXP_TIMEOUT=86400000
+# SSL props
+server.ssl.key-store=classpath:jwtdemo.p12
+server.ssl.key-store-type=pkcs12
+server.ssl.key-store-password=test#1234
+server.ssl.key-password=test#1234
+server.ssl.key-alias=jwtdemo
+server.port=8443
+
+
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=testspringjavamailsender@gmail.com
+spring.mail.password=SpringSecurity
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true

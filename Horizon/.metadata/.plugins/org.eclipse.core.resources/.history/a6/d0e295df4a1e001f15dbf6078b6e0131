@@ -1,0 +1,61 @@
+package com.app.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.app.dto.ChangePasswordDto;
+import com.app.dto.SignInDto;
+import com.app.service.SignInService;
+
+@RestController
+public class SignInContoller {
+
+	@Autowired
+	private SignInService loginService;
+	@Autowired
+	private AuthenticationManager mgr;
+
+
+	@CrossOrigin(origins = "*")
+	@PostMapping("/signIn")
+	public ResponseEntity<?> signIn(@RequestBody @Valid SignInDto userCredentials) {
+		Authentication verifiedAuth = mgr.authenticate(
+				new UsernamePasswordAuthenticationToken(userCredentials.getEmail(), userCredentials.getPassword()));
+		System.out.println(verifiedAuth.getClass());// Custom user details
+		return loginService.validateUser(userCredentials.getEmail(), userCredentials.getPassword(), verifiedAuth);
+	}
+	 @GetMapping("/requestToChangePassword")
+		public ResponseEntity<?> requestToChangePassword(@Param(value = "email")  String email) {
+		 return loginService.requestToChangePassword(email);
+		 
+	 }
+	 @GetMapping("/verifyOtp")
+	 public ResponseEntity<?> verifyOtp(@Param(value = "otp")  String otp,@Param(value = "email")  String email) {
+		 return loginService.verifyOtp(otp, email);
+
+	 }
+	 @PutMapping("/changePassword/{email}")
+	 public ResponseEntity<?> changePassword(@PathVariable(value = "email")  String email ,@RequestBody ChangePasswordDto newPassword)
+	 {
+		 return loginService.changePassword(email, newPassword.getNewPassword());
+
+	 }
+	 
+
+	 
+
+}

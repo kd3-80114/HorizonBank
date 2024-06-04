@@ -1,0 +1,246 @@
+package com.app.service;
+import java.math.BigInteger;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.app.dao.AccountDao;
+import com.app.dao.CustomerDao;
+import com.app.dao.IdentityDocumentsDao;
+import com.app.dao.TransactionDao;
+import com.app.dto.AccountResponseDto;
+import com.app.dto.Accountdto;
+import com.app.dto.BeneficiaryDto;
+import com.app.dto.CustomerDetailsDto;
+import com.app.dto.TransactionDto;
+import com.app.dto.TransferMoneyDto;
+import com.app.entities.Account;
+import com.app.entities.Beneficiary;
+import com.app.entities.Customer;
+import com.app.entities.Gender;
+import com.app.entities.IdentityDocuments;
+import com.app.entities.Status;
+import com.app.entities.Transaction;
+import com.app.entities.TransactionType;
+import com.app.utils.PasswordGenerator;
+
+@Service
+@Transactional
+public class CustomerServiceImpl implements CustomerService {
+	@Autowired
+	private CustomerDao customerDao;
+	@Autowired
+	private IdentityDocumentsDao idDocDao;
+	@Autowired
+	private AccountDao accountDao;
+	@Autowired
+	private TransactionDao transactionDao;
+	@Autowired
+	private PasswordEncoder encoder;
+	@Autowired EmailService emailService;
+	private Customer customer;
+	private String message ;
+
+	@Override
+	public String registerUser(CustomerDetailsDto customerDetails) {
+		message = "Duplicate ! Data already exists.";
+		if (!customerDao.existsByEmail(customerDetails.getEmail())
+				&& !customerDao.existsByMobileNumber(customerDetails.getMobileNumber())
+				&& !customerDao.existsByPhoneNumber(customerDetails.getPhoneNumber())
+				&& !idDocDao.existsByAdharCardNumber(customerDetails.getAdharCardNumber())
+				&& !idDocDao.existsByPanCardNumber(customerDetails.getPanCardNumber())
+				&& !idDocDao.existsByPassportNumber(customerDetails.getPassportNumber())
+				&& !idDocDao.existsByElectionCardNumber(customerDetails.getElectionCardNumber())
+				&& !idDocDao.existsByDrivingLicenseNumber(customerDetails.getElectionCardNumber())) {
+			Customer customer = new Customer();
+			IdentityDocuments iddocs = new IdentityDocuments();
+			iddocs.setAdharCardNumber(customerDetails.getAdharCardNumber());
+			iddocs.setPanCardNumber(customerDetails.getPanCardNumber());
+			if (customerDetails.getDrivingLicenseNumber() != null) {
+				iddocs.setDrivingLicenseNumber(customerDetails.getDrivingLicenseNumber());
+			}
+			if (customerDetails.getPassportNumber() != null) {
+				iddocs.setPassportNumber(customerDetails.getPassportNumber());
+			}
+			if (customerDetails.getElectionCardNumber() != null) {
+				iddocs.setElectionCardNumber(customerDetails.getElectionCardNumber());
+			}
+			customer.setIdDocs(iddocs);
+			customer.setLandmark(customerDetails.getLandmark());
+			customer.setDateOfBirth(customerDetails.getDateOfBirth());
+			customer.setFirstName(customerDetails.getFirstName());
+			customer.setLastName(customerDetails.getLastName());
+			customer.setMobileNumber(customerDetails.getMobileNumber());
+			customer.setPhoneNumber(customerDetails.getPhoneNumber());
+			customer.setEmail(customerDetails.getEmail());
+			customer.setGender(Gender.valueOf(customerDetails.getGender().toUpperCase()));
+			customer.setCity(customerDetails.getCity());
+			customer.setState(customerDetails.getState());
+			customer.setCountry(customerDetails.getCountry());
+			customer.setPincode(customerDetails.getPincode());
+			String password=PasswordGenerator.generatePassword();
+			String message="Your One time password for Horizon account is "+password+"  \n Please change it after firstLogin.";
+			emailService.sendMessage(customerDetails.getEmail(), message);
+			customer.setPassword(encoder.encode(password));
+			customerDao.save(customer);
+			
+		}
+		message = "customer saved successfully";
+		return message;
+	}
+
+	@Override
+	public String addBeneficiary(BeneficiaryDto beneficiaryDetails) throws SQLException {
+		customer = validateBeneficiaryDetails(beneficiaryDetails);
+		if (customer != null) {
+
+			@SuppressWarnings("deprecation")
+			Customer customertoSave = customerDao.getById(beneficiaryDetails.getCustomerId());
+			Beneficiary beneficiary = new Beneficiary();
+			beneficiary.setAccountNumber(beneficiaryDetails.getAccountNumber());
+			beneficiary.setFirstName(beneficiaryDetails.getFirstName());
+			beneficiary.setLastName(beneficiaryDetails.getLastName());
+			customertoSave.getBeneficiary().add(beneficiary);
+			return "Beneficiary Added Successfully";
+		}
+
+		return "Beneficiary Details Invalid";
+	}
+
+	public Customer validateBeneficiaryDetails(BeneficiaryDto beneficiaryDetails) {
+		Account acc = accountDao.findAccountByAccountNumber(beneficiaryDetails.getAccountNumber());
+		AccountResponseDto account = new AccountResponseDto();
+		account.setAccountNumber(acc.getAccountNumber());
+		account.setAccountType(acc.getAccountType().getAccountType().toString());
+		account.setBalance(acc.getBalance());
+		account.setCustomerId(acc.getCustomerId().getId());
+		account.setIsFreezed(acc.getIsFreezed());
+		if (account != null) {
+			customer = customerDao.findById(account.getCustomerId()).orElse(null);
+			if (customer != null
+					&& customer.getFirstName().toUpperCase().equals(beneficiaryDetails.getFirstName().toUpperCase())
+					&& customer.getLastName().toUpperCase().equals(beneficiaryDetails.getLastName().toUpperCase())) {
+				return customer;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Set<BeneficiaryDto> getAllBeneficiary(Long customerId) {
+		Customer customer = customerDao.findById(customerId).orElseThrow(null);
+		Set<BeneficiaryDto> beneficiaryset = new HashSet<>();
+		customer.getBeneficiary().forEach(ele -> {
+			BeneficiaryDto beneficiary = new BeneficiaryDto();
+			beneficiary.setAccountNumber(ele.getAccountNumber());
+			beneficiary.setFirstName(ele.getFirstName());
+			beneficiary.setLastName(ele.getLastName());
+			beneficiaryset.add(beneficiary);
+		});
+		return beneficiaryset;
+	}
+
+	@Override
+	public String transferMoney(TransferMoneyDto accountsDetails) {
+	Account debitAccount=accountDao.findAccountByAccountNumber(accountsDetails.getDebitAccountNumber());
+	Account creditAccount=accountDao.findAccountByAccountNumber(accountsDetails.getCreditAccoutNumber());
+
+
+	if(debitAccount.getBalance().compareTo(BigInteger.valueOf(accountsDetails.getAmount()))==1 && !debitAccount.getIsFreezed() && !creditAccount.getIsFreezed() )
+	{
+		
+		debitAccount.setBalance(debitAccount.getBalance().subtract(BigInteger.valueOf(accountsDetails.getAmount())));
+		creditAccount.setBalance(creditAccount.getBalance().add(BigInteger.valueOf(accountsDetails.getAmount())));
+		Transaction transaction=new Transaction();
+		transaction.setAmount(BigInteger.valueOf(accountsDetails.getAmount()));
+		transaction.setCreditAccountId(creditAccount);
+		transaction.setDebitAccountId(debitAccount);
+		transaction.setStatus(Status.SUCCESS);
+		transaction.setTimestamp(LocalDateTime.now());
+		transaction.setTransactionType(TransactionType.valueOf(accountsDetails.getTransactionType().toUpperCase()));
+		transaction.setCreditccountBalance(creditAccount.getBalance());
+		transaction.setDebitaccountBalance(debitAccount.getBalance());
+		transactionDao.save(transaction);
+		return "Money transafered successfully";
+	}
+	else if(debitAccount.getBalance().compareTo(BigInteger.valueOf(accountsDetails.getAmount()))==-1)
+	{
+		return "Insufficient Balance";
+	}
+	else if(debitAccount.getIsFreezed())
+	{
+		return "Your Account is Freezed";
+	}
+	else if(creditAccount.getIsFreezed())
+	{
+		return "Credit Account Does Not exist.";
+	}
+		return "";
+	}
+
+	@Override
+	public List<TransactionDto> getStatement(String accountNumber,String fromDate,String toDate) {
+
+		 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		Account account=accountDao.findAccountByAccountNumber(accountNumber);
+		
+		 List<Transaction> tr=	 transactionDao.findAllTransactions(account.getAccountNumber(),LocalDate.parse(fromDate, formatter).atStartOfDay(),
+		            LocalDate.parse(toDate, formatter).atStartOfDay().plusDays(1));
+		 List<TransactionDto> transactions=new ArrayList<>();
+		 tr.forEach(ele->{
+			 TransactionDto dto=new TransactionDto();
+			 dto.setAmount(ele.getAmount());
+			 dto.setCreditAccountId(ele.getCreditAccountId().getAccountNumber());
+			 dto.setDebitAccountId(ele.getDebitAccountId().getAccountNumber());
+			 dto.setStatus(ele.getStatus());
+			 dto.setTransactionType(ele.getTransactionType());
+			 dto.setTimestamp(ele.getTimestamp());
+			 if(accountNumber.equals(ele.getCreditAccountId().getAccountNumber()))
+			 {
+				 dto.setCreditccountBalance(ele.getCreditccountBalance());
+			 }
+			 else if(accountNumber.equals(ele.getDebitAccountId().getAccountNumber()))
+			 {
+				 dto.setDebitaccountBalance(ele.getDebitaccountBalance());
+			 }
+			 transactions.add(dto);
+		 });
+		 
+		 return transactions;
+	}
+
+	@Override
+	public BigInteger getBalance(String accountNumber) {
+		Account account=accountDao.findAccountByAccountNumber(accountNumber);
+		return account.getBalance();
+	}
+
+	@Override
+	public Set<Accountdto> getListOfAccountsOfCustomer(String email) {
+		Customer customer=customerDao.findCustomerByEmail(email);
+		Set<Accountdto> accountlist=new HashSet<Accountdto>();
+		if(customer!=null)
+		{
+			customer.getAccounts().forEach(ele->{
+				Accountdto dto=new Accountdto();
+				dto.setAccountNumber(ele.getAccountNumber());
+				dto.setAccountType(ele.getAccountType());
+				accountlist.add(dto);
+				
+			});;
+		}
+		return accountlist;
+	
+	}
+}

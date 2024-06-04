@@ -1,0 +1,39 @@
+body
+{
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding:0;
+    background-color:purple;
+
+}
+.container
+{
+    position: absolute;
+    top:5%;
+    left: 32%;
+    background-color: red;
+    height: 400px;
+    width: 300px;
+
+    
+    
+}   
+.a
+{
+    background-color: blue;
+    height: 50px;
+    width: 50px;
+}  
+.b
+{
+    background-color: green;
+    height: 50px;
+    width: 50px;
+}  
+.c
+{
+    background-color:yellow;
+    height: 50px;
+    width: 50px;
+}  

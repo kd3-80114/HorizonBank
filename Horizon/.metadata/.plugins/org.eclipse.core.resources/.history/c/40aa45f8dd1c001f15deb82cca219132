@@ -1,0 +1,122 @@
+package com.app.service;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.transaction.Transactional;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.app.dao.AdminDao;
+import com.app.dao.CustomerDao;
+import com.app.dao.UserDao;
+import com.app.dto.Accountdto;
+import com.app.dto.SignInResponseDto;
+import com.app.dto.SigninResponse;
+import com.app.entities.Admin;
+import com.app.entities.Customer;
+import com.app.entities.Role;
+import com.app.entities.User;
+import com.app.security.JwtUtils;
+@Service
+@Transactional
+public class SignInServiceImpl implements SignInService {
+	@Autowired
+	private UserDao signInDao;
+	@Autowired
+	private ModelMapper mapper;
+	@Autowired
+	private CustomerDao customerDao;
+	@Autowired
+	private AdminDao adminDao;
+	@Autowired 
+	private PasswordEncoder encoder;
+	@Autowired
+	private JwtUtils utils;
+	
+	@Override
+	public ResponseEntity<?> validateUser(String emailId,String password,Authentication verifiedAuth) {
+		
+		System.out.println("In sign Service");
+		System.out.println(emailId);
+		User user=signInDao.findByEmail(emailId);
+		System.out.println("user---->"+user);
+		if(user != null && ! user.getIsBlocked() )
+		{
+			if(user.getRole().equals(Role.ROLE_CUSTOMER))
+			{
+				Customer customer=customerDao.findCustomerByEmail(emailId);
+				SignInResponseDto response=new SignInResponseDto();
+				response.setId(customer.getId());
+				response.setEmail(customer.getEmail());
+				response.setRole(customer.getRole());
+				response.setFirstName(customer.getFirstName());
+				response.setLastName(customer.getLastName());
+				response.setMobileNumber(customer.getMobileNumber());
+				response.setPhoneNumber(customer.getPhoneNumber());
+				response.setDateOfBirth(customer.getDateOfBirth());
+				response.setGender(customer.getGender());
+				response.setLandmark(customer.getLandmark());
+				response.setCity(customer.getCity());
+				response.setState(customer.getState());
+				response.setCountry(customer.getCountry());
+				response.setPincode(customer.getPincode());
+				Set<Accountdto> accounts=new HashSet<>();
+				customer.getAccounts().forEach(ele->{
+					Accountdto dto=new Accountdto();
+					dto.setAccountNumber(ele.getAccountNumber());
+					dto.setBalance(ele.getBalance());
+					dto.setAccountType(ele.getAccountType());
+					accounts.add(dto);
+					
+				});
+				response.setAccounts(accounts);
+				SigninResponse message=new SigninResponse(utils.generateJwtToken(verifiedAuth), "Successful Authentication!!!");
+				response.setSignInResponse(message);
+				return new ResponseEntity<>(response,HttpStatus.OK);
+
+			}
+			else
+			{
+				Admin admin=adminDao.findAdminByEmail(emailId);
+				SignInResponseDto response=new SignInResponseDto();
+				response.setId(admin.getId());
+				response.setEmail(admin.getEmail());
+				response.setRole(admin.getRole());
+				response.setFirstName(admin.getFirstName());
+				response.setLastName(admin.getLastName());
+				response.setMobileNumber(admin.getMobileNumber());
+				response.setPhoneNumber(admin.getPhoneNumber());
+				response.setDateOfBirth(admin.getDateOfBirth());
+				response.setGender(admin.getGender());
+				response.setLandmark(admin.getLandmark());
+				response.setCity(admin.getCity());
+				response.setState(admin.getState());
+				response.setCountry(admin.getCountry());
+				response.setPincode(admin.getPincode());
+				SigninResponse message=new SigninResponse(utils.generateJwtToken(verifiedAuth), "Successful Authentication!!!");
+				response.setSignInResponse(message);
+				return new ResponseEntity<SignInResponseDto>(response,HttpStatus.OK);	
+			}
+			
+		}
+		else if(user != null && user.getPassword().equals(encoder.encode(password)) && ! user.getIsBlocked())
+		{
+			return new ResponseEntity<String>("Your Account has been Blocked.",HttpStatus.OK);
+		}
+		else
+		{
+			return new ResponseEntity<String>("Invalid Credentials",HttpStatus.BAD_REQUEST);
+		}
+		
+	}
+
+	
+	 
+}

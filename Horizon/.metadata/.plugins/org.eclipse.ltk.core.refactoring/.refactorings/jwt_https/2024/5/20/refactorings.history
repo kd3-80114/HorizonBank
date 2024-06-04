@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy package &apos;com.app&apos; to &apos;Deo/src/main/java&apos;&#x0D;&#x0A;- Original project: &apos;jwt_https&apos;&#x0D;&#x0A;- Destination element: &apos;Deo/src/main/java&apos;&#x0D;&#x0A;- Original element: &apos;jwt_https/src/main/java/com.app&apos;" description="Copy package" destination="=Deo/src\/main\/java=/optional=/true=/=/maven.pomderived=/true=/" element1="/src\/main\/java=/optional=/true=/=/maven.pomderived=/true=/&lt;com.app" flags="589830" fragments="1" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyPackages" stamp="1715691529716" version="1.0"/>
+</session>

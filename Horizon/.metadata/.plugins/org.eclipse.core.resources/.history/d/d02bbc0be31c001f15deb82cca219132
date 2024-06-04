@@ -1,0 +1,82 @@
+package com.app.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import com.app.dto.AllTransactionsDto;
+import com.app.service.AdminService;
+
+@RestController
+@RequestMapping("/admin")
+public class AdminController {
+	@Autowired
+	private AdminService adminService;;
+	
+	
+	@GetMapping("/getListOfAccoutsToApprove")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	public ResponseEntity<?> getListOfAccoutsToApprove()
+	{
+		return new ResponseEntity<>(adminService.getListOfAccoutsToApprove(),HttpStatus.OK);
+	}
+	
+	
+	@GetMapping("/approveAccount")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	public ResponseEntity<?> approveAccount(@Param ("accountNumber") String accountNumber)
+	{
+		return new ResponseEntity<>(adminService.approveAccount(accountNumber),HttpStatus.OK);
+	}
+	
+	
+	@PostMapping("/seeAllTransactionOfCustomer")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	public ResponseEntity<?> seeAllTransactionOfCustomer(@RequestBody AllTransactionsDto details)
+	{
+		return adminService.seeAllTransactionOfCustomer(details);
+	}
+	
+	
+	
+	@GetMapping("/getCustomerByCustomerId")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	public ResponseEntity<?> getCustomerByCustomerId(@Param("customerId") Long customerId)
+	{
+		return adminService.getCustomerByCustomerId(customerId);
+	}
+	
+	@GetMapping("/blockCustomer")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	public ResponseEntity<?> blockCustomer(@Param("email") String email)
+	{
+		return adminService.blockCustomer(email);
+	}
+	
+	@GetMapping("/unBlockCustomer")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	public ResponseEntity<?> unBlockCustomer(@Param("email") String email)
+	{
+		return adminService.unBlockCustomer(email);
+	}
+	
+	@GetMapping("/freezeAccount")
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	public ResponseEntity<?> freezeAccount(@Param("accountNumber") String accountNumber)
+	{
+		return adminService.freezeAccount(accountNumber);
+	}
+	
+	@GetMapping("/unfreezeAccount")
+	@PreAuthorize("hasRole('ROLE_ADMIN)")
+	public ResponseEntity<?> unfreezeAccount(@Param("accountNumber") String accountNumber)
+	{
+		return adminService.unfreezeAccount(accountNumber);
+	}
+}

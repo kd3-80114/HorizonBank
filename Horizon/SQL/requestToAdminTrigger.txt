@@ -1,0 +1,11 @@
+delimiter //
+create Trigger requestToAdmin
+before insert on account for each row
+begin
+insert into request_for_account_approval (account_number) values (new.account_number);
+end //
+
+
+SELECT count(*)
+FROM information_schema.routines
+WHERE routine_type = "Idgeneratorr";

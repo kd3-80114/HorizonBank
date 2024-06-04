@@ -1,0 +1,16 @@
+package com.app.dao;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.app.entities.Account;
+@Repository
+public interface AccountDao extends JpaRepository<Account, Long> {
+	@Modifying
+	@Query(value = "INSERT INTO account (account_number,account_type_id, customer_id_id,is_freezed,balance) VALUES (AccountIdgenerator(),:accounttype,:custid,true,0)",nativeQuery = true)
+	public void save(@Param("accounttype") Long acctype,@Param("custid") Long custid);
+    Account findAccountByAccountNumber(String accountNumber);
+    Account findByAccountNumber(String accountNumber);
+}

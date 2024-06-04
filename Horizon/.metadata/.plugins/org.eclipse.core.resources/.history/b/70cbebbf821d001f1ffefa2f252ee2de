@@ -1,0 +1,19 @@
+package com.app.service;
+
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+
+
+
+public interface SignInService {
+
+	ResponseEntity<?> validateUser(String emailId,String password,Authentication verifiedAuth);
+
+	ResponseEntity<?> requestToChangePassword(String email);
+
+	ResponseEntity<?> verifyOtp(String otp,String email);
+
+	ResponseEntity<?> changePassword(String oldPassword, String newPassword);
+
+}

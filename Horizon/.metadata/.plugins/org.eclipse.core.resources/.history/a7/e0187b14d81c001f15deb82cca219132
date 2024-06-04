@@ -1,0 +1,43 @@
+
+package com.app.service;
+
+import javax.transaction.Transactional;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.app.dao.AdminDao;
+import com.app.dao.CustomerDao;
+import com.app.dao.UserDao;
+import com.app.entities.IUser;
+import com.app.entities.Role;
+import com.app.entities.User;
+
+@Service
+@Transactional
+public class SignInServiceImpl implements SignInService {
+	@Autowired
+	private UserDao signInDao;
+	@Autowired
+	private ModelMapper mapper;
+	@Autowired
+	private CustomerDao customerDao;
+	@Autowired
+	private AdminDao adminDao;
+
+	@Override
+	public IUser validateUser(String emailId, String password) {
+
+		System.out.println("In sign Service");
+		User user = signInDao.findByEmail(emailId);
+		if (user != null && user.getRole().equals(Role.ROLE_CUSTOMER)) {
+			return customerDao.findCustomerByEmail(emailId);
+		} else {
+			return adminDao.findAdminByEmail(emailId);
+
+		}
+
+	}
+
+}

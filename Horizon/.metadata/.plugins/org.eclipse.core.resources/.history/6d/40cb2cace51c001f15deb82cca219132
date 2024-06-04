@@ -1,0 +1,106 @@
+package com.app.controller;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.app.dto.AccountResponseDto;
+import com.app.dto.BeneficiaryDto;
+import com.app.dto.CreateAccountDto;
+import com.app.dto.CustomerDetailsDto;
+import com.app.dto.TransferMoneyDto;
+import com.app.entities.AccountType;
+import com.app.service.AccountService;
+import com.app.service.CustomerService;
+
+
+@RestController
+@RequestMapping("/customer")
+public class CustomerController {
+	@Autowired
+	private CustomerService customerService;
+	@Autowired
+	private AccountService accountService;
+	@PostMapping("/register")
+	public ResponseEntity<String> registerUser(@RequestBody CustomerDetailsDto customerDetails) {
+		return new ResponseEntity<>(customerService.registerUser(customerDetails), HttpStatus.CREATED);
+	}
+	@PreAuthorize("hasRole('ROLE_CUSTOMER')")
+	@PostMapping("/createAccount")
+	public ResponseEntity<String> createAccount(@RequestBody CreateAccountDto details) {
+		return new ResponseEntity<>(accountService.createAccount(details.getCustomerId(),
+				AccountType.valueOf(details.getAccountType().toUpperCase())), HttpStatus.CREATED);
+
+	}
+	
+	@PreAuthorize("hasRole('ROLE_CUSTOMER')")
+	@PostMapping("/addBeneficiary")
+	public ResponseEntity<String> addBeneficiary(@RequestBody BeneficiaryDto beneficiaryDetails) {
+
+	try {
+			return new ResponseEntity<>(customerService.addBeneficiary(beneficiaryDetails), HttpStatus.CREATED);
+		} catch (Exception e) {
+			
+			Throwable cause = e.getCause().getCause();
+			if (cause instanceof SQLIntegrityConstraintViolationException) {
+				if (cause.getMessage().contains("Duplicate entry")) {
+					return new ResponseEntity<>("Beneficiary Already exists", HttpStatus.BAD_REQUEST);
+				}
+			}
+			return null;
+		}
+
+	}
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	@GetMapping("/findAccount")
+	public AccountResponseDto findAccount(@RequestParam(name = "accountNumber") String accountNo) {
+		System.out.println("prinitng");
+		return accountService.findAccountByAccountNumber(accountNo);
+	}
+	@PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_CUSTOMER')")
+	@GetMapping("/getAllBeneficiary")
+	public Set<BeneficiaryDto> getAllBeneficiary(Long customerId) {
+		return customerService.getAllBeneficiary(customerId);
+	}
+	
+	@PreAuthorize("hasRole('ROLE_CUSTOMER')")
+	@PostMapping("/transferMoney")
+	public ResponseEntity<?> transferMoney(@RequestBody TransferMoneyDto accountsDetails) {
+		return new ResponseEntity<>(customerService.transferMoney(accountsDetails), HttpStatus.CREATED);
+	}
+	
+	@PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_CUSTOMER')")
+	@GetMapping("/generateStatement")
+	public ResponseEntity<?> generateStatement(@RequestParam(name = "accountNumber") String accountNumber,@RequestParam(name = "fromDate") String fromDate,@RequestParam(name = "toDate") String toDate) {
+		
+		return new ResponseEntity<>(customerService.getStatement(accountNumber,fromDate,toDate), HttpStatus.CREATED);
+
+	}
+	
+	@PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_CUSTOMER')")
+	@GetMapping("/getBalance")
+	public ResponseEntity<?> getBalance(@RequestParam(name = "accountNumber") String accountNumber) {
+		
+		return new ResponseEntity<>(customerService.getBalance(accountNumber), HttpStatus.CREATED);
+
+	}
+	
+	@PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_CUSTOMER')")
+	@GetMapping("/getListOfAccountsOfCustomer")
+	public ResponseEntity<?> getAllAccounts(@RequestParam(name = "email") String email)
+	{
+		return new ResponseEntity<>(customerService.getListOfAccountsOfCustomer(email), HttpStatus.CREATED);
+	}
+	
+		
+	
+}

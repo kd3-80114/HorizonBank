@@ -1,0 +1,6 @@
+create trigger userDetails
+befor insert 
+on customer for each row
+begin
+insert into user (email,is_blocked,password,role)values(new.email,false,new.password,new.role);
+end

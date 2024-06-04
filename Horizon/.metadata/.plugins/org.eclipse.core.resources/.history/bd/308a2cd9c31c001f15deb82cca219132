@@ -1,0 +1,11 @@
+package com.app.service;
+
+import org.springframework.http.ResponseEntity;
+
+import com.app.entities.User;
+
+public interface SignInService {
+
+	 User validateUser(String emailId, String password);
+
+}

@@ -1,0 +1,175 @@
+package com.app;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DatabaseInitializationListener {
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	@EventListener(ApplicationReadyEvent.class)
+	public void initializeDatabase() {
+
+		if (!checkTriggerOnCustomerExists()) {
+			createUserTrigger();
+		}
+		if (!checkTriggerOnAdminExists()) {
+			createAdminTrigger();
+		}
+		if (!checkAccountIdgeneratorExists()) {
+			createAccountIdgenerator();
+		}
+		if (!checkTriggerOnAccountsExists()) {
+			createAccountTrigger();
+		}
+		if (!checkCustomerIdgeneratorExists()) {
+			createCustomerIdgenerator();
+		}
+		if (!checkAccountTypeExists()) {
+			createAccountType();
+		}
+		if (!checkCustomerUpdatePasswordTriggerExists()) {
+			createCustomerUpdatePasswordTrigger();
+		}
+		if (!checkAdminUpdatePasswordTriggerExists()) {
+			createAdminUpdatePasswordTrigger();
+		}
+		
+	}
+
+	private void createAdminUpdatePasswordTrigger() {
+		jdbcTemplate.execute(
+				"create trigger adminUpdatePassword before update  on admin for each row begin update into user (password) values (new.password); end ");		
+		
+	}
+
+	private boolean checkAdminUpdatePasswordTriggerExists() {
+		if (jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_NAME = 'adminUpdatePassword'",
+				Integer.class) > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	private void createCustomerUpdatePasswordTrigger() {
+		jdbcTemplate.execute(
+				"create trigger customerUpdatePassword before update  on customer for each row begin update into user (password)values(new.password); end ");		
+	}
+
+	private boolean checkCustomerUpdatePasswordTriggerExists() {
+		if (jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_NAME = 'customerUpdatePassword'",
+				Integer.class) > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	private void createAccountType() {
+		jdbcTemplate.execute(
+				"INSERT INTO ACCOUNT_TYPES (id,account_type,daily_transfer_limit,interest_rate,minimum_balance) values (default,'SAVING',500000,7,1500)");
+		jdbcTemplate.execute(
+				"INSERT INTO ACCOUNT_TYPES (id,account_type,daily_transfer_limit,interest_rate,minimum_balance) values (default,'CURRENT',5000000,4,10000)");
+	}
+
+	private boolean checkAccountTypeExists() {
+		if (jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM Horizon.account_types",
+				Integer.class) == 2) {
+			return true;
+		}
+		jdbcTemplate.execute("DELETE FROM Horizon.account_types");
+		return false;
+	}
+
+	private boolean checkTriggerOnCustomerExists() {
+
+		if (jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_NAME = 'userDetail'",
+				Integer.class) > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean checkTriggerOnAdminExists() {
+
+		if (jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_NAME = 'addadmintouser'",
+				Integer.class) > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean checkAccountIdgeneratorExists() {
+		if (jdbcTemplate.queryForObject(
+				"select count(*) from information_schema.ROUTINES where ROUTINE_NAME='AccountIdgenerator'",
+				Integer.class) > 0) {
+
+			return true;
+		}
+		return false;
+	}
+	private boolean checkCustomerIdgeneratorExists() {
+		if (jdbcTemplate.queryForObject(
+				"select count(*) from information_schema.ROUTINES where ROUTINE_NAME='CustomerIdgenerator'",
+				Integer.class) > 0) {
+
+			return true;
+		}
+		return false;
+	}
+
+	private boolean checkTriggerOnAccountsExists() {
+		if (jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TRIGGERS WHERE TRIGGER_NAME = 'adminApproval'",
+				Integer.class) > 0) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private void createUserTrigger() {
+
+		jdbcTemplate.execute(
+				"create trigger userDetail before insert  on customer for each row begin insert into user (email,is_blocked,password,role)values(new.email,false,new.password,new.role); end ");
+	}
+
+	private void createAdminTrigger() {
+
+		jdbcTemplate.execute(
+				"create trigger addadmintouser before insert  on admin for each row begin insert into user (email,is_blocked,password,role) values (new.email,false,new.password,new.role); end");
+	}
+
+	private void createAccountTrigger() {
+
+		jdbcTemplate.execute(
+				"create trigger adminApproval before insert  on account for each row begin insert into request_for_account_approval (account_number) values (new.account_number); end");
+	}
+
+	private void createAccountIdgenerator() {
+
+		jdbcTemplate.execute("CREATE FUNCTION AccountIdgenerator() " + "RETURNS VARCHAR(40) " + "DETERMINISTIC "
+				+ "BEGIN " + "DECLARE lastval VARCHAR(40); " + "DECLARE newid VARCHAR(40); "
+				+ "SELECT MAX(CAST(RIGHT(account_number, 6) AS UNSIGNED)) INTO lastval FROM Account; "
+				+ "IF lastval IS NULL THEN " + "SET lastval = '0'; " + "END IF; "
+				+ "SET newid = CONCAT('BKID', LPAD(lastval + 1, 6, '0')); " + "RETURN newid; " + "END");
+	}
+
+	private void createCustomerIdgenerator() {
+
+		jdbcTemplate.execute("CREATE FUNCTION CustomerIdgenerator() " + "RETURNS VARCHAR(40) " + "DETERMINISTIC "
+				+ "BEGIN " + "DECLARE lastval VARCHAR(40); " + "DECLARE newid VARCHAR(40); "
+				+ "SELECT MAX(CAST(RIGHT(account_number, 6) AS UNSIGNED)) INTO lastval FROM customer; "
+				+ "IF lastval IS NULL THEN " + "SET lastval = '0'; " + "END IF; "
+				+ "SET newid = CONCAT('CUST', LPAD(lastval + 1, 6, '0')); " + "RETURN newid; " + "END");
+	}
+}

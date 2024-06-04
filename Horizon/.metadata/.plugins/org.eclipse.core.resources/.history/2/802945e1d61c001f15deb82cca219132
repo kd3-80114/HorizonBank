@@ -1,0 +1,71 @@
+package com.app.entities;
+import java.time.LocalDate;
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+import org.springframework.format.annotation.DateTimeFormat;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.Getter;
+import lombok.Setter;
+@Entity
+@Getter
+@Setter
+@Table(name = "customer")
+//@ToString
+public class Customer extends BaseEntity {
+	@Column(length = 25,nullable = false)
+	private String firstName;
+	@Column(length = 25,nullable = false)
+	private String lastName;
+	@Column(length = 25,unique = true,nullable = false)
+	private String mobileNumber;
+	@Column(length = 25,unique = true)
+	private String phoneNumber;
+	@Column(length = 40,unique = true)
+	private String email;
+	@Column(length = 100)
+	private String password;
+	@DateTimeFormat(pattern = "yyyy-MM-dd")
+	private LocalDate dateOfBirth;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private Gender gender;
+	@Column(length = 100)
+	private String Landmark;
+	@Column(length = 20,nullable = false)
+	private String city;
+	@Column(length = 20,nullable = false)
+	private String state;
+	@Column(length = 20,nullable = false)
+	private String country;
+	@Column(length = 6,nullable = false)
+	private String pincode;
+	@OneToMany(mappedBy = "customerId",cascade = CascadeType.ALL)
+	private Set<Account> accounts;
+	@OneToOne(cascade = CascadeType.ALL)
+	@JsonIgnore
+	private IdentityDocuments idDocs;
+	@Enumerated(EnumType.STRING)
+	private final Role role=Role.valueOf("ROLE_CUSTOMER"); 
+	@JsonIgnore
+	@ManyToMany(cascade = CascadeType.ALL)
+	@JoinTable(name = "beneficiaryDetails",
+		joinColumns = @JoinColumn(name = "customer_id"), 
+		inverseJoinColumns = @JoinColumn(name = "beneficiary_id")
+			)
+	private Set<Beneficiary> beneficiary;
+	
+}

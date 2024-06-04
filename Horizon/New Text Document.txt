@@ -1,0 +1,25 @@
+{
+  "firstName": "Sarvesh",
+  "lastName": "Kadve",
+  "mobileNumber": "9730808323",
+  "phoneNumber": "07242425692",
+  "email": "sarvesh@gmail.com",
+  "dateOfBirth": "2002-02-26",
+  "gender": "Male",
+  "city": "Nashik",
+  "state": "Maharashtra",
+  "country": "India",
+  "pincode": "444005",
+  "adharCardNumber": "123456789123",
+  "panCardNumber": "PAN1234",
+  "drivingLicenseNumber": "DL12345",
+  "electionCardNumber": "EL-123456",
+  "passportNumber": "Pass123",
+  "landmark": "Behind Inox Theatre"
+}
+sarvesh  ---> password-1%T43JmV email=doseg81773@cgbird.com;
+nileh ---->password-XhZ4OA0m tirzutordi@gufum.com
+
+
+
+Advance java lecture By madhura mam-https://drive.google.com/drive/folders/1E1rinKwz9TIdOLQPe7E36FYWvIBdqSPG

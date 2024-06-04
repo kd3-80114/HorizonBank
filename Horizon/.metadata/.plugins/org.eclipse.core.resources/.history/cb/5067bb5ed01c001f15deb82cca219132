@@ -1,0 +1,73 @@
+package com.app.controller;
+
+import javax.validation.Valid;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.app.dto.SignInDto;
+import com.app.dto.SignInResponseDto;
+import com.app.dto.SigninResponse;
+import com.app.entities.Customer;
+import com.app.security.JwtUtils;
+import com.app.service.SignInService;
+
+@RestController
+public class SignInContoller {
+	@Autowired
+	private SignInService signInservice;
+	
+//	@PostMapping("/signIn")
+//	public ResponseEntity<?> signIn(@RequestBody SignInDto signIn )
+//	{
+//		System.out.println("In sign Contorller");
+//		return signInservice.validateUser(signIn.getEmail(),signIn.getPassword());
+//	}
+		@Autowired
+		private JwtUtils utils;
+		@Autowired 
+		private SignInService loginService;
+		@Autowired 
+		private AuthenticationManager mgr;
+		@Autowired
+		private ModelMapper mapper;
+		@CrossOrigin(origins = "*")
+		@PostMapping("/signIn")
+		public ResponseEntity<?> signIn(@RequestBody @Valid SignInDto userCredentials)
+		{
+			
+			System.out.println("in signin " + userCredentials);
+			// simply invoke authentucate(...) on AuthMgr
+			// i/p : Authentication => un verifed credentials
+			// i/f --> Authentication --> imple by UsernamePasswordAuthToken
+			// throws exc OR rets : verified credentials (UserDetails i.pl class: custom
+			// user details)
+
+			Authentication verifiedAuth = mgr
+					.authenticate(new UsernamePasswordAuthenticationToken
+							(userCredentials.getEmail(), userCredentials.getPassword()));
+			System.out.println(verifiedAuth.getClass());// Custom user details
+			
+			
+			ResponseEntity<Object> entity=(ResponseEntity<Object>)loginService.validateUser(userCredentials.getEmail(), userCredentials.getPassword());
+			if (entity.getBody()  instanceof Customer) {
+				Customer cutomer  = (Customer) entity.getBody();
+				SignInResponseDto response=mapper.map(cutomer, SignInResponseDto.class);
+				response.setSignInResponse(new SigninResponse(utils.generateJwtToken(verifiedAuth),"Successful Authentication!!!"));
+				return new ResponseEntity<>(response,HttpStatus.OK);
+			}
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+	}
+	
+
+}

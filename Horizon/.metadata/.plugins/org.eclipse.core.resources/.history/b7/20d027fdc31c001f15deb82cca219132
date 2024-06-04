@@ -1,0 +1,12 @@
+package com.app.service;
+
+import org.springframework.http.ResponseEntity;
+
+import com.app.dto.SignInResponseDto;
+import com.app.entities.User;
+
+public interface SignInService {
+
+	SignInResponseDto validateUser(String emailId, String password);
+
+}

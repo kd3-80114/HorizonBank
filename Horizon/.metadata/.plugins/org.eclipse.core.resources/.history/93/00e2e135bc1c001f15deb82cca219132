@@ -1,0 +1,22 @@
+package com.app.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+@Service
+public class EmailService {
+	@Autowired
+	private JavaMailSender mailSender;
+	
+	public void sendMessage(String from,String to,String message)
+	{
+		SimpleMailMessage messagetoSend=new SimpleMailMessage();
+		messagetoSend.setTo(to);
+		messagetoSend.setFrom(from);
+		messagetoSend.setText(message);
+		mailSender.send(messagetoSend);
+	}
+
+}

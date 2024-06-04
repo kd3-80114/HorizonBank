@@ -1,0 +1,19 @@
+delimiter //
+CREATE FUNCTION Idgeneratorr()
+RETURNS VARCHAR(40)
+DETERMINISTIC
+BEGIN
+    DECLARE lastval VARCHAR(40);
+    DECLARE newid VARCHAR(40);
+
+    SELECT MAX(CAST(RIGHT(account_number, 6) AS UNSIGNED)) INTO lastval FROM Account;
+
+    IF lastval IS NULL THEN
+        SET lastval = '0';
+    END IF;
+
+    SET newid = CONCAT('BKID', LPAD(lastval + 1, 6, '0'));
+
+    RETURN newid;
+END //
+delimiter ;
